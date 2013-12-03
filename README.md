@@ -8,6 +8,7 @@ redis-sentinel-java
 
 自动切换日志信息
 
+```
 {info-refresh=9917, port=6379, quorum=1, num-slaves=1, flags=master, last-ok-ping-reply=392, pending-commands=0, num-other-sentinels=0, name=master1, last-ping-reply=392, runid=0dec551778d0ce9857478e82521a3b7ed2984070, ip=192.168.9.19}
 [192.168.9.19, 6379]
 set1
@@ -47,3 +48,4 @@ set2
 set3
 [192.168.9.18, 6379]
 set4
+```
