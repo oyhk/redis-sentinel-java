@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisShardInfo;
 import redis.clients.jedis.ShardedJedisPool;
 
@@ -16,11 +17,11 @@ import redis.clients.jedis.ShardedJedisPool;
  */
 public class CheckRedisSentinelServer implements Runnable {
 
-	private RedisSentinelClient redisSentinelClient = null;
+	private RedisSentinel redisSentinelClient = null;
 	private String nextMaster = null;
 	private String upMaster = null;
 
-	public CheckRedisSentinelServer(RedisSentinelClient redisSentinelClient) {
+	public CheckRedisSentinelServer(RedisSentinel redisSentinelClient) {
 		this.redisSentinelClient = redisSentinelClient;
 	}
 
@@ -41,22 +42,30 @@ public class CheckRedisSentinelServer implements Runnable {
 
 				if (!nextMaster.equals(upMaster)) {
 					System.out.println("主redis发生故障，自动切换...");
-					List<RedisInfo> redisInfos = new ArrayList<RedisInfo>();
-					List<Map<String, String>> lists = this.redisSentinelClient.getJedisSentinel().sentinelMasters();
-					for (int i = 0; i < lists.size(); i++) {
-						Map<String, String> map = lists.get(i);
-						RedisInfo redisInfo = new RedisInfo();
-						redisInfo.setHost(map.get("ip"));
-						redisInfo.setPort(Integer.parseInt(map.get("port")));
-						redisInfo.setName(map.get("name"));
-						redisInfos.add(redisInfo);
+					if (redisSentinelClient instanceof RedisSentinelJedisPool) {
+						String host = masters.get(0);
+						int port = Integer.parseInt(masters.get(1));
+						RedisSentinel.jedisPool = new JedisPool(this.redisSentinelClient.getPoolConfig(), host, port);
+						System.out.println("jedispool");
+					} else if (redisSentinelClient instanceof RedisSentinelShardedJedisPool) {
+						List<RedisInfo> redisInfos = new ArrayList<RedisInfo>();
+						List<Map<String, String>> lists = this.redisSentinelClient.getJedisSentinel().sentinelMasters();
+						for (int i = 0; i < lists.size(); i++) {
+							Map<String, String> map = lists.get(i);
+							RedisInfo redisInfo = new RedisInfo();
+							redisInfo.setHost(map.get("ip"));
+							redisInfo.setPort(Integer.parseInt(map.get("port")));
+							redisInfo.setName(map.get("name"));
+							redisInfos.add(redisInfo);
+						}
+						List<JedisShardInfo> shards = new ArrayList<JedisShardInfo>();
+						for (int i = 0; i < redisInfos.size(); i++) {
+							RedisInfo redisInfo = redisInfos.get(i);
+							shards.add(new JedisShardInfo(redisInfo.getHost(), redisInfo.getPort(), redisInfo.getName()));
+						}
+						RedisSentinel.shardedJedisPool = new ShardedJedisPool(this.redisSentinelClient.getPoolConfig(), shards);
+						System.out.println("shardedJedisPool");
 					}
-					List<JedisShardInfo> shards = new ArrayList<JedisShardInfo>();
-					for (int i = 0; i < redisInfos.size(); i++) {
-						RedisInfo redisInfo = redisInfos.get(i);
-						shards.add(new JedisShardInfo(redisInfo.getHost(), redisInfo.getPort(), redisInfo.getName()));
-					}
-					RedisSentinelClient.setShardedJedisPool(new ShardedJedisPool(this.redisSentinelClient.getPoolConfig(), shards));
 					upMaster = nextMaster;
 				}
 				Thread.sleep(5000);
