@@ -5,7 +5,7 @@ redis-sentinel-java
 
 - 简单使用
 - 环境要求
-	- 一定要搭好一个redis sentinel的集群redis环境才行
+	- redis sentinel的集群redis环境
 	
 ```
 git clone git@github.com:oyhk/redis-sentinel-java.git
