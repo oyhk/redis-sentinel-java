@@ -1,9 +1,14 @@
 package com.mkfree.sentinel;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.commons.pool.impl.GenericObjectPool;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisShardInfo;
 import redis.clients.jedis.ShardedJedis;
 import redis.clients.jedis.ShardedJedisPool;
 
@@ -17,9 +22,9 @@ import redis.clients.jedis.ShardedJedisPool;
 public abstract class RedisSentinel {
 
 	// jedis 分片 共享连接池(目前使用静态变量解决)
-	public static ShardedJedisPool shardedJedisPool = null;
+	public ShardedJedisPool shardedJedisPool = null;
 	// jedis 不分片 共享连接池(目前使用静态变量解决)
-	public static JedisPool jedisPool = null;
+	public JedisPool jedisPool = null;
 	// 连接池的配置 (如果不设置，使用默认值)
 	protected GenericObjectPool.Config poolConfig = new GenericObjectPool.Config();
 	// jedisSentinel 监控实例
@@ -29,6 +34,65 @@ public abstract class RedisSentinel {
 	public static final String IP = "ip";
 	public static final String PORT = "port";
 	public static final String NAME = "name";
+
+	private String nextMaster = null;
+	private String upMaster = null;
+
+	/**
+	 * 创建多个集群共享的连接池
+	 */
+	protected void createJedisPool(String... clusterName) {
+		List<String> redisInfo = jedisSentinel.sentinelGetMasterAddrByName(clusterName[0]);
+		String host = redisInfo.get(0);
+		int port = Integer.parseInt(redisInfo.get(1));
+		jedisPool = new JedisPool(poolConfig, host, port);
+	}
+
+	/**
+	 * 检查redis sentinel 主/从redis服务是否正常, 当发生故障时，当redis sentinel监控自动切换 从redis 升级为主redis，需要重新初始化jedispool
+	 * 
+	 * @param redisSentinel 那种监控的连接池（是否分片)
+	 * @param clusterName 集群名
+	 */
+	protected void checkRedisSentinelServer(final RedisSentinel redisSentinel, final String... clusterName) {
+		System.out.println("检查redis sentinel 主/从redis服务是否正常...");
+		Thread checkRedisSentinel = new Thread() {
+			public void run() {
+				try {
+					while (true) {
+						jedisSentinel.ping();
+						List<String> masters = jedisSentinel.sentinelGetMasterAddrByName(clusterName[0]);
+						String master = masters.toString();
+						System.out.println(master);
+						if (upMaster == null || upMaster.equals("")) {
+							upMaster = master;
+						}
+						if (nextMaster == null || nextMaster.equals("") || !nextMaster.equals(master)) {
+							nextMaster = master;
+						}
+						System.out.println("come here?");
+						System.out.println(upMaster);
+						System.out.println(nextMaster);
+						if (!nextMaster.equals(upMaster)) {
+							System.out.println("主redis发生故障，自动切换...");
+							if (redisSentinel instanceof RedisSentinelJedisPool) {
+								createJedisPool(clusterName);// 重新初始化jedispool
+								System.out.println("jedispool");
+							} else if (redisSentinel instanceof RedisSentinelShardedJedisPool) {
+								// 暂时不考虑分片
+							}
+							upMaster = nextMaster;
+						}
+						Thread.sleep(5000);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+					System.out.println("redis sentinel 监控异常,请检查...");
+				}
+			}
+		};
+		checkRedisSentinel.start();
+	}
 
 	/**
 	 * 获取客户端连接池

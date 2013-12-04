@@ -30,7 +30,7 @@ public class RedisSentinelShardedJedisPool extends RedisSentinel {
 	public RedisSentinelShardedJedisPool(String host, int port, String clusterName) {
 		this.jedisSentinel = new Jedis(host, port);
 		this.createShardedJedisPool(clusterName);
-		new Thread(new CheckRedisSentinelServer(this)).start();
+		this.checkRedisSentinelServer(this, clusterName);
 	}
 
 	/**
@@ -84,24 +84,12 @@ public class RedisSentinelShardedJedisPool extends RedisSentinel {
 		return shardedJedisPool;
 	}
 
-	public static void setShardedJedisPool(ShardedJedisPool shardedJedisPool) {
-		RedisSentinel.shardedJedisPool = shardedJedisPool;
-	}
-
 	public Jedis getJedisSentinel() {
 		return jedisSentinel;
 	}
 
 	public void setJedisSentinel(Jedis jedisSentinel) {
 		this.jedisSentinel = jedisSentinel;
-	}
-
-	public GenericObjectPool.Config getPoolConfig() {
-		return poolConfig;
-	}
-
-	public void setPoolConfig(GenericObjectPool.Config poolConfig) {
-		this.poolConfig = poolConfig;
 	}
 
 }

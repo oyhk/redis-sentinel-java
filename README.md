@@ -3,10 +3,15 @@ redis-sentinel-java
 
 本项目主要是做一个redis-sentinel java客户端集群的自动切换方案，主要为了学习而玩。我相信有非常多的bug，请原谅。
 
-
 - 简单使用
- ```
+- 环境要求
+	- 一定要搭好一个redis sentinel的集群redis环境才行
+	
+```
+git clone git@github.com:oyhk/redis-sentinel-java.git
+```
 
+ ```
 	public static void main(String[] args) throws InterruptedException {
 		String host = "192.168.9.17";
 		int port = 26379;

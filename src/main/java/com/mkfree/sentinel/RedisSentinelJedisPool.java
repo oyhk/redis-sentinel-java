@@ -18,18 +18,7 @@ public class RedisSentinelJedisPool extends RedisSentinel {
 	public RedisSentinelJedisPool(String host, int port, String... clusterName) {
 		this.jedisSentinel = new Jedis(host, port);
 		this.createJedisPool(clusterName);
-		new Thread(new CheckRedisSentinelServer(this)).start();
-	}
-
-	/**
-	 * 创建多个集群共享的连接池
-	 */
-	private void createJedisPool(String... clusterName) {
-		List<String> redisInfo = jedisSentinel.sentinelGetMasterAddrByName(clusterName[0]);
-		System.out.println(redisInfo);
-		String host = redisInfo.get(0);
-		int port = Integer.parseInt(redisInfo.get(1));
-		jedisPool = new JedisPool(poolConfig, host, port);
+		this.checkRedisSentinelServer(this, clusterName);
 	}
 
 	@Override

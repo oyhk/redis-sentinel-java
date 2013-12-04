@@ -36,7 +36,6 @@ public class RedisSentinelClientTest {
 					e.printStackTrace();
 					try {
 						Thread.sleep(30000);
-						setRedisSentinelShardedJedisPool(client);
 					} catch (InterruptedException e1) {
 						e1.printStackTrace();
 					}
@@ -65,7 +64,6 @@ public class RedisSentinelClientTest {
 						e.printStackTrace();
 						try {
 							Thread.sleep(30000);
-							setRedisSentinelJedisPool(client);
 						} catch (InterruptedException e1) {
 							e1.printStackTrace();
 						}
