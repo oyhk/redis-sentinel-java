@@ -20,7 +20,7 @@ git clone git@github.com:oyhk/redis-sentinel-java.git
 		
 		Jedis jedis = null;
 		try {
-			jedis = (Jedis) client.getResource();
+			jedis = (Jedis) redisSentinelJedisPool.getResource();
 			jedis.set("key", "value");
 		} catch (Exception e) {
 			e.printStackTrace();
