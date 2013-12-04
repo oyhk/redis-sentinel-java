@@ -1,9 +1,6 @@
 package com.mkfree.sentinel;
 
-import java.util.List;
-
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.ShardedJedis;
 
 public class RedisSentinelJedisPool extends RedisSentinel {
@@ -18,7 +15,7 @@ public class RedisSentinelJedisPool extends RedisSentinel {
 	public RedisSentinelJedisPool(String host, int port, String... clusterName) {
 		this.jedisSentinel = new Jedis(host, port);
 		this.createJedisPool(clusterName);
-		this.checkRedisSentinelServer(this, clusterName);
+		this.checkRedisSentinelServer(this, 5000, clusterName);
 	}
 
 	@Override

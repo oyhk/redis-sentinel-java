@@ -52,38 +52,37 @@ public abstract class RedisSentinel {
 	 * 检查redis sentinel 主/从redis服务是否正常, 当发生故障时，当redis sentinel监控自动切换 从redis 升级为主redis，需要重新初始化jedispool
 	 * 
 	 * @param redisSentinel 那种监控的连接池（是否分片)
+	 * @param againCheckTime 单位（毫秒/millisecond）
 	 * @param clusterName 集群名
 	 */
-	protected void checkRedisSentinelServer(final RedisSentinel redisSentinel, final String... clusterName) {
-		System.out.println("检查redis sentinel 主/从redis服务是否正常...");
-		Thread checkRedisSentinel = new Thread() {
+	protected void checkRedisSentinelServer(final RedisSentinel redisSentinel, final int againCheckTime, final String... clusterName) {
+		System.out.println("检查redis sentinel 主/从redis服务是否正常,任务开始...");
+		Runnable checkRedisSentinelRunnable = new Runnable() {
+			@Override
 			public void run() {
 				try {
 					while (true) {
 						jedisSentinel.ping();
 						List<String> masters = jedisSentinel.sentinelGetMasterAddrByName(clusterName[0]);
 						String master = masters.toString();
-						System.out.println(master);
 						if (upMaster == null || upMaster.equals("")) {
 							upMaster = master;
 						}
 						if (nextMaster == null || nextMaster.equals("") || !nextMaster.equals(master)) {
 							nextMaster = master;
 						}
-						System.out.println("come here?");
-						System.out.println(upMaster);
-						System.out.println(nextMaster);
-						if (!nextMaster.equals(upMaster)) {
-							System.out.println("主redis发生故障，自动切换...");
-							if (redisSentinel instanceof RedisSentinelJedisPool) {
-								createJedisPool(clusterName);// 重新初始化jedispool
-								System.out.println("jedispool");
-							} else if (redisSentinel instanceof RedisSentinelShardedJedisPool) {
-								// 暂时不考虑分片
-							}
-							upMaster = nextMaster;
+						if (nextMaster.equals(upMaster)) {
+							continue;
 						}
-						Thread.sleep(5000);
+						System.out.println("主redis发生故障，自动切换...");
+						if (redisSentinel instanceof RedisSentinelJedisPool) {
+							createJedisPool(clusterName);// 重新初始化jedispool
+							System.out.println("重新初始化jedispool...");
+						} else if (redisSentinel instanceof RedisSentinelShardedJedisPool) {
+							// 暂时不考虑分片
+						}
+						upMaster = nextMaster;
+						Thread.sleep(againCheckTime);
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -91,7 +90,7 @@ public abstract class RedisSentinel {
 				}
 			}
 		};
-		checkRedisSentinel.start();
+		new Thread(checkRedisSentinelRunnable).start();
 	}
 
 	/**
@@ -121,14 +120,6 @@ public abstract class RedisSentinel {
 
 	public void setPoolConfig(GenericObjectPool.Config poolConfig) {
 		this.poolConfig = poolConfig;
-	}
-
-	public Jedis getJedisSentinel() {
-		return jedisSentinel;
-	}
-
-	public void setJedisSentinel(Jedis jedisSentinel) {
-		this.jedisSentinel = jedisSentinel;
 	}
 
 }

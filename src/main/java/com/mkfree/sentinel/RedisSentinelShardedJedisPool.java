@@ -30,7 +30,7 @@ public class RedisSentinelShardedJedisPool extends RedisSentinel {
 	public RedisSentinelShardedJedisPool(String host, int port, String clusterName) {
 		this.jedisSentinel = new Jedis(host, port);
 		this.createShardedJedisPool(clusterName);
-		this.checkRedisSentinelServer(this, clusterName);
+		this.checkRedisSentinelServer(this, 5000, clusterName);
 	}
 
 	/**
