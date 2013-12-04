@@ -54,11 +54,11 @@ public class RedisSentinelClientTest {
 			public void run() {
 				int count = 0;
 				while (true) {
-					Jedis Jedis = null;
+					Jedis jedis = null;
 					try {
-						Jedis = (Jedis) client.getResource();
+						jedis = (Jedis) client.getResource();
 						Thread.sleep(1000);
-						Jedis.set("b" + count, "b" + count);
+						jedis.set("b" + count, "b" + count);
 						count++;
 						System.out.println("set" + count);
 					} catch (Exception e) {
@@ -70,7 +70,7 @@ public class RedisSentinelClientTest {
 							e1.printStackTrace();
 						}
 					} finally {
-						client.returnBrokenResource(Jedis);
+						client.returnBrokenResource(jedis);
 					}
 				}
 			}

@@ -1,8 +1,30 @@
 redis-sentinel-java 
 ========
 
-本项目主要是做一个redis-sentinel java客户端集群的自动切换方案，主要为了学习而玩。
-我相信有非常多的bug，请原谅。
+本项目主要是做一个redis-sentinel java客户端集群的自动切换方案，主要为了学习而玩。我相信有非常多的bug，请原谅。
+
+
+- 简单使用
+ ```
+
+	public static void main(String[] args) throws InterruptedException {
+		String host = "192.168.9.17";
+		int port = 26379;
+		String clusterName = "master1";
+		RedisSentinel redisSentinelJedisPool = new RedisSentinelJedisPool(host, port, clusterName);
+		
+		Jedis jedis = null;
+		try {
+			jedis = (Jedis) client.getResource();
+			jedis.set("key", "value");
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			client.returnBrokenResource(jedis);
+		}
+	}
+	
+ ```
 
 
 
